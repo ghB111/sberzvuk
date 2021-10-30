@@ -34,6 +34,9 @@ def read_input(source: str, prefix: str):
     r = requests.get(source, allow_redirects=True)
     dest_folder =  config.DOWNLOADS_FOLDER
     download(source, dest_folder, prefix)
+
+    recognitions.make_all_recognition(prefix)
+
     return {"source": len(r.content), "prefix":prefix} # todo return message
 
 
