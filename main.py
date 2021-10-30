@@ -5,6 +5,8 @@ from fastapi import FastAPI, status
 import os
 import requests
 
+import config
+
 app = FastAPI()
 
 def download(url: str, dest_folder: str, filename: str):
@@ -29,8 +31,8 @@ def download(url: str, dest_folder: str, filename: str):
 @app.post("/recognise", status_code= status.HTTP_200_OK )
 def read_input(source: str, prefix: str):
     r = requests.get(source, allow_redirects=True)
-    dest_folder = "downloads"
+    dest_folder =  config.DOWNLOADS_FOLDER
     download(source, dest_folder, prefix)
-    return {"source": len(r.content), "prefix":prefix}
+    # return {"source": len(r.content), "prefix":prefix} # todo return message
 
 
