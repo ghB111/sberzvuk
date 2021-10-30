@@ -26,17 +26,8 @@ def download(url: str, dest_folder: str, filename: str):
     else:  # HTTP status code 4XX/5XX
         print("Download failed: status code {}\n{}".format(r.status_code, r.text))
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Optional[str] = None):
-    return {"item_id": item_id, "q": q}
-
 @app.post("/recognise", status_code= status.HTTP_200_OK )
-def read_input(source: str, prefix:str):
+def read_input(source: str, prefix: str):
     r = requests.get(source, allow_redirects=True)
     dest_folder = "downloads"
     download(source, dest_folder, prefix)
