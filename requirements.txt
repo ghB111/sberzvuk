@@ -60,6 +60,7 @@ numpy==1.19.0
 numpydoc==0.7.0
 oauthlib==2.0.6
 olefile==0.45.1
+opencv-python==4.5.4.58
 PAM==0.4.2
 pandas==1.0.5
 patsy==0.5.1
