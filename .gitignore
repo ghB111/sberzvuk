@@ -1,2 +1,4 @@
+processed/*
+downloads/*
 venv/*
 __pycache__/*

@@ -6,6 +6,7 @@ import os
 import requests
 
 import config
+import recognitions
 
 app = FastAPI()
 
@@ -34,5 +35,6 @@ def read_input(source: str, prefix: str):
     dest_folder =  config.DOWNLOADS_FOLDER
     download(source, dest_folder, prefix)
     return {"source": len(r.content), "prefix":prefix} # todo return message
+
 
 
