@@ -35,7 +35,9 @@ docutils==0.14
 doge==3.5.0
 fastapi==0.70.0
 feedparser==5.2.1
+ffmpeg-python==0.2.0
 filelock==3.0.12
+future==0.18.2
 gitsome==0.7.0
 h11==0.12.0
 httplib2==0.9.2
@@ -63,7 +65,6 @@ numpy==1.19.0
 numpydoc==0.7.0
 oauthlib==2.0.6
 olefile==0.45.1
-opencv-python==4.5.4.58
 PAM==0.4.2
 pandas==1.0.5
 patsy==0.5.1
