@@ -2,3 +2,4 @@ processed/*
 downloads/*
 venv/*
 __pycache__/*
+s3_config.py
