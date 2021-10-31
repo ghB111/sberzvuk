@@ -6,6 +6,8 @@ import config
 from video_blur import recognize
 from names_detector import NamesDetector
 
+from videoprocessing import json_audio_print
+
 def make_mono_wav_of_file(prefix: str) -> str:
     res_path = os.path.join(config.get_tmp_dir_path(), prefix + ".wav")
     proc = subprocess.Popen(["ffmpeg",
@@ -37,21 +39,15 @@ def make_all_recognition(prefix: str) -> None:
     timestamps_to_beep = detector.process_audio(sound_fpath)
 
     final_video_dest = os.path.join(processed_folder, result_video_fname)
-    process_video_for_beeping(timestamps_to_beep, sound_fpath, final_video_dest)
+    process_video_for_beeping(timestamps_to_beep, sound_fpath, prefix, final_video_dest)
 
     if not os.path.exists(processed_folder):
         os.makedirs(processed_folder)
 
-    # json stuff audio
-    with open(os.path.join(processed_folder, result_audio_fname), "w") as f:
-        f.write(result_audio)
+    result_audio_path = os.path.join(processed_folder, result_audio_fname)
+    json_audio_print(result_audio_path, timestamps)
 
-    # json stuff video
-    parser_to_json(result_video_fname, fps, frame_array)
-
-    # final video
-    with open(os.path.join(processed_folder, result_processed_video_fname), "w") as f:
-        f.write("oh boy...") # todo
-
+    result_video_path = os.path.join(processed_folder, result_audio_fname)
+    parser_to_json(result_video_path, fps, frame_array)
 
 

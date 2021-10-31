@@ -4,6 +4,7 @@ from typing import Tuple
 import json
 import os
 import config
+import ffmpeg
 
 
 from pydub import AudioSegment
@@ -34,13 +35,50 @@ def json_audio_print(filename, time_start, time_end):
         json.dump(data, f, indent=4)
 
 
-def process_video_for_beeping(timestamps: Timestamps, orig_audio_fpath: str, video_output_fpath: str) -> None:
+def process_video_for_beeping(timestamps: Timestamps, orig_audio_fpath: str, prefix: str, video_output_fpath: str) -> None:
+    """
+    with prefix finds the blurred nosound video in tmp
+    by orig_audio_fpath finds the audio
+    """
+    parts = []
+    begin = 0
 
+    censor = AudioSegment.from_wav('censor.wav')
+    audio = AudioSegment.from_wav(orig_audio_fpath)
 
+    for start, end in timestamp_tuples:
+        part = audio[begin*1000:start*1000]
+        parts.append(part)  
+        
+        duration = (end - start) * 1000
+        part = censor[:duration]
+        parts.append(part)
 
+        begin = end
 
+    parts.append(audio[begin*1000:])
+    output = sum(parts[1:], parts[0])
 
+    output_path = os.path.join(config.get_tmp_dir_path(), prefix + "-beeped.wav")
+    output.export(output_path, format='wav')
 
+    ffmpeg_input = output_path
+    audio = (
+            ffmpeg
+            .input(ffmpeg_input)
+            )
 
+    video_blurred_path = os.path.join(config.get_tmp_dir_path, prefix + ".mp4")
+    video_blurred = (
+            ffmpeg
+            .input(video_blurred_path)
+            .video
+            )
 
-    # b.export('new_audio.wav', format='wav')
+    (
+            ffmpeg
+            .concat(video_blurred, audio, v=1, a=1)
+            .output(video_output_fpath)
+            .run(overwrite_output=True)
+            )
+    
