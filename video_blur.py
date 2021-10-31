@@ -1,12 +1,3 @@
-
-# !pip install mtcnn
-# !pip install tensorflow==2.5
-# !pip install keras==2.4.3
-# !pip install opencv-python
-# !pip install pillow
-# !pip install keras_applications
-# !pip install keras_vggface
-
 import cv2
 import glob
 import os
@@ -47,164 +38,78 @@ def detect_blur(prediction):
   results = decode_predictions(prediction)
   need_blur = False
   for result in results[0]:
-    if result[1]*100 > 70:
+    if result[1]*100 > 80:
       need_blur = True
   return need_blur
 
 
-def find_face(img, model,detector):
-  #TODO relocate detector
-  border_rel = 0
-  detections = detector.detect_faces(img)
+def process_banch(banch, model, detector, force_blur): 
+  detections = detector.detect_faces(banch[len(banch)-1])
+  blur_founded = []
 
   for detection in detections:
     x1, y1, width, height = detection['box']
-    dw = round(width * border_rel)
-    dh = round(height * border_rel)
-    x2, y2 = x1 + width + dw, y1 + height + dh
-    face = img[y1:y2, x1:x2]
+    x2, y2 = x1 + width, y1 + height
+    face = banch[len(banch)-1][y1:y2, x1:x2]
 
     face = PIL.Image.fromarray(face)
     face = face.resize((224, 224))
     face = np.asarray(face)
 
     face_pp = preprocess_face(face)
-    prediction = model.predict(face_pp)
-    if detect_blur(prediction):
-      img[y1:y2, x1:x2] = 0
-    return 
-  
-
-def deframe_Video(video_path):
-  try:
-    vidcap = cv2.VideoCapture(video_path)
-  except Exception as e:
-    print(e)
-    return None
-
-  has_frames = True
-  frame_num = 0
-  skip_frames = 0
-  size = None
-
-  while True:
-    '''
-    if skip_frames > 0:
-      has_frames, _ = vidcap.read()
-      skip_frames -= 1
-      continue
-    else:
-      skip_frames = 25
-    '''
-    has_frames, img = vidcap.read()
-    if has_frames:
-      cv2.imwrite("images/" + '/image_' + str(frame_num) + '.jpg', img)
-      size = (img.shape[1], img.shape[0])
-      frame_num += 1
-    else:
-      break
-      
-  return size
-
-def process_banch(banch , model, detector):
-
-  border_rel = 0
-  detections = detector.detect_faces(banch[0])
-
-  for detection in detections:
-    x1, y1, width, height = detection['box']
-    dw = round(width * border_rel)
-    dh = round(height * border_rel)
-    x2, y2 = x1 + width + dw, y1 + height + dh
-    face = banch[0][y1:y2, x1:x2]
-
-    face = PIL.Image.fromarray(face)
-    face = face.resize((224, 224))
-    face = np.asarray(face)
-
-    face_pp = preprocess_face(face)
-    prediction = model.predict(face_pp)
-    
+    prediction = model.predict_on_batch(face_pp)
     if detect_blur(prediction):
       for index, img in enumerate(banch):
         img[y1:y2, x1:x2] = 0
         banch[index] = img
+      blur_founded.append((y1,y2, x1,x2))
 
-  return banch
+  if len(force_blur) > 0:
+    for y1,y2,x1,x2 in force_blur:
+      for index, img in enumerate(banch):
+        img[y1:y2, x1:x2] = 0
+        banch[index] = img
 
-
-  
-
-
-def CreateVideo(size, model, detector, output_videopath, gridSize):
-
-  if size is not None:
-    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 25., size)
-    
-    
-    for filename in sorted_alphanumeric(glob.glob('images/*.jpg')):
-        imArr = []
-        for i in range(gridSize):
-          imArr.append( cv2.imread(filename))
-        
-        imArr = process_banch(imArr, model, detector)
-        for im in imArr:
-          out.write(im)
-    out.release()
+  return banch, blur_founded
 
 
-
-
-def predict_from_videopath(video_path, model):
+def CreateVideo(video_path, model, detector, output_videopath):
   try:
     vidcap = cv2.VideoCapture(video_path)
   except Exception as e:
     print(e)
     return None
+  
+  GRID_SIZE = round(vidcap.get(cv2.cv.CV_CAP_PROP_FPS), 0)
 
-  has_frames = True
-  frame_num = 0
-  skip_frames = 0
-  size = None
-
-  while has_frames:
-    '''
-    if skip_frames > 0:
-      has_frames, _ = vidcap.read()
-      skip_frames -= 1
-      continue
-    else:
-      skip_frames = 25
-    '''
+  if vidcap is not None:
     has_frames, img = vidcap.read()
-    find_face(img, frame_num, model)
     size = (img.shape[1], img.shape[0])
-    frame_num += 1
+    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 25., size)
     
-  return size
+    blur_founded = []
+    iteration = 0
+    imArr = []
+    while has_frames:
+      has_frames, img = vidcap.read()
+      if has_frames:
+        imArr.append(img)
 
+        if len(imArr) == GRID_SIZE:
+          print(iteration)
+          iteration += 1
+          imArr, blur_founded = process_banch(imArr, model, detector, blur_founded)
+
+          for im in imArr:
+            out.write(im)
+
+          imArr = []
+
+    out.release()
 
 def recognize(video_path, output_videopath):
-  make_a_dir('images/')
   model = VGGFace(model='resnet50')
   detector = MTCNN()
-  gridSize = 25
-  
-  # shitting in directory with frames from video
-  #size = (1920, 1080)
-  size = deframe_Video(video_path)
-  print(size)
-  #size = predict_from_videopath(video_path, model)
-  
-  #creating a video 
+  CreateVideo(video_path, model, detector, output_videopath)
 
-  CreateVideo(size, model, detector, output_videopath, gridSize)
-'''
-  if size is not None:
-    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 3., size)
-    for filename in sorted_alphanumeric(glob.glob('images/*.jpg')):
-        img = cv2.imread(filename)
-        out.write(img)
-    out.release()
-'''
-recognize('./video.mp4', "video_hehe.avi")
+# recognize('hackathon_part_1.mp4', "video_out.avi")
