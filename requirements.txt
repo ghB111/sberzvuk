@@ -29,3 +29,5 @@ opencv-python==4.5.4.58
 pillow==8.4.0
 keras_applications==1.0.8
 keras_vggface==0.6
+vosk
+pymystem3
