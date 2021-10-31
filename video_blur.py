@@ -22,19 +22,21 @@ def detect_blur(prediction):
   results = decode_predictions(prediction)
   need_blur = False
   for result in results[0]:
-    if result[1]*100 > 80:
+    if result[1]*100 > 85:
       need_blur = True
   return need_blur
 
 
-def process_banch(banch, model, detector, force_blur): 
-  detections = detector.detect_faces(banch[len(banch)-1])
+def process_banch(batch, batch_index, model, detector, force_blur): 
+  detections = detector.detect_faces(batch[len(batch)-1])
+  
   blur_founded = []
+  blur_drawed = []
 
   for detection in detections:
     x1, y1, width, height = detection['box']
     x2, y2 = x1 + width, y1 + height
-    face = banch[len(banch)-1][y1:y2, x1:x2]
+    face = batch[len(batch)-1][y1:y2, x1:x2]
 
     face = PIL.Image.fromarray(face)
     face = face.resize((224, 224))
@@ -43,18 +45,20 @@ def process_banch(banch, model, detector, force_blur):
     face_pp = preprocess_face(face)
     prediction = model.predict_on_batch(face_pp)
     if detect_blur(prediction):
-      for index, img in enumerate(banch):
+      for index, img in enumerate(batch):
         img[y1:y2, x1:x2] = 0
-        banch[index] = img
+        batch[index] = img
+        blur_drawed.append((index + batch_index * len(batch), (x1, y1), (x2, y2)))
       blur_founded.append((y1,y2, x1,x2))
 
   if len(force_blur) > 0:
     for y1,y2,x1,x2 in force_blur:
-      for index, img in enumerate(banch):
+      for index, img in enumerate(batch):
         img[y1:y2, x1:x2] = 0
-        banch[index] = img
+        batch[index] = img
+        blur_drawed.append((index + batch_index * len(batch), (x1, y1), (x2, y2)))
 
-  return banch, blur_founded
+  return batch, blur_founded, blur_drawed
 
 
 def CreateVideo(video_path, model, detector, output_videopath):
@@ -64,15 +68,18 @@ def CreateVideo(video_path, model, detector, output_videopath):
     print(e)
     return None
   
-  GRID_SIZE = round(vidcap.get(cv2.cv.CV_CAP_PROP_FPS), 0)
+  FPS = round(vidcap.get(cv2.CAP_PROP_FPS), 0)
 
   if vidcap is not None:
     has_frames, img = vidcap.read()
+    if not has_frames:
+      return None
     size = (img.shape[1], img.shape[0])
-    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 25., size)
+    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MP4V'), 25., size)
     
     blur_founded = []
-    iteration = 0
+    blur_drawed = []
+    batch_index = 0
     imArr = []
     while has_frames:
       has_frames, img = vidcap.read()
@@ -80,10 +87,10 @@ def CreateVideo(video_path, model, detector, output_videopath):
         imArr.append(img)
 
         if len(imArr) == GRID_SIZE:
-          print(iteration)
-          iteration += 1
-          imArr, blur_founded = process_banch(imArr, model, detector, blur_founded)
-
+          print("Batch:", batch_index)
+          batch_index += 1
+          imArr, blur_founded, blur_drawed_batch = process_banch(imArr, batch_index, model, detector, blur_founded)
+          blur_drawed += blur_drawed_batch
           for im in imArr:
             out.write(im)
 
@@ -91,9 +98,15 @@ def CreateVideo(video_path, model, detector, output_videopath):
 
     out.release()
 
+  return FPS, blur_drawed
+
 def recognize(video_path, output_videopath):
   model = VGGFace(model='resnet50')
   detector = MTCNN()
-  CreateVideo(video_path, model, detector, output_videopath)
+  return CreateVideo(video_path, model, detector, output_videopath)
 
-# recognize('hackathon_part_1.mp4', "video_out.avi")
+# fps, res = recognize('video.mp4', "video_out.mp4")
+# print(fps)
+# print(res[0][0])
+# print(res[0][1])
+# print(res[0][2])
