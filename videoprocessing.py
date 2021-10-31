@@ -40,6 +40,8 @@ def process_video_for_beeping(timestamps: Timestamps, video_source_fpath: str, v
             .video
             )
     first_cut = timestamps[0][0]
+    last_cut = timestamps[-1][1]
+
     first_audio_part = (
             ffmpeg
             .input(video_source_fpath)
@@ -47,42 +49,46 @@ def process_video_for_beeping(timestamps: Timestamps, video_source_fpath: str, v
             .filter('atrim', end=first_cut)
             )
 
-    cur_audio = first_audio_part
-    last_end = None
-    for (start, end) in timestamps:
-        if last_end is not None:
-            # merge the original audio that is before the current start timestamp
-            passed_audio = (
-                    ffmpeg
-                    .input(video_source_fpath)
-                    .audio
-                    .filter('atrim', start=last_end, end=start)
-                    )
-            cur_audio = (
-                    cur_audio
-                    .filter((cur_audio, passed_audio), 'concat', n=2, v=0, a=1)
-                    )
-        audio_beep = (
-                ffmpeg
-                .input('censor.wav')
-                .filter('atrim', end=end-start)
-                .filter('aeval', exprs="val(ch)/2") # make twice as silent
-                )
-        cur_audio = (
-                ffmpeg
-                .filter((cur_audio, audio_beep), 'concat', n=2, v=0, a=1)
-                )
-        last_end = end
-
     last_audio_part = (
             ffmpeg
             .input(video_source_fpath)
             .audio
-            .filter('atrim', start=timestamps[-1][1])
+            .filter('atrim', start=last_cut)
             )
+
+    def timestamp_to_beep_of_length(timestamp):
+        length = timestamp[1] - timestamp[0]
+        return (
+                ffmpeg
+                .input("censor.wav")
+                .filter('atrim', end=length)
+                )
+    all_beeps = list(map(timestamp_to_beep_of_length, timestamps))
+    middle_audios = []
+    for i in range(len(timestamps)):
+        if i == len(timestamps) - 1:
+            break
+        start = timestamps[i][0]
+        end = timestamps[i + 1][1]
+        new_part = (
+                ffmpeg
+                .input(video_source_fpath)
+                .audio
+                .filter('atrim', start=start, end=end)
+                )
+        middle_audios.append(new_part)
+
+    res_audios = [first_audio_part]
+    for i in range(len(all_beeps) + len(middle_audios)):
+        if i % 2 == 0:
+            res_audios.append(all_beeps[i // 2])
+        else:
+            print(i // 2 + 1)
+            res_audios.append(middle_audios[i // 2])
+    res_audios.append(last_audio_part)
     res_audio = (
             ffmpeg
-            .filter((cur_audio, last_audio_part), 'concat', n=2, v=0, a=1)
+            .filter(res_audios, 'concat', n=len(res_audios), v=0, a=1)
             )
     (
             ffmpeg
