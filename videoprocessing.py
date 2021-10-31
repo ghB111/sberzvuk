@@ -9,7 +9,8 @@ import ffmpeg
 Timestamps = List[Tuple[float, float]]
 
 def json_audio_print(filename, time_start, time_end):
-    if not os.path.exists(filename):
+    # check on 0 size and if exists JSON file
+    if not os.path.exists(filename) or os.stat(filename).st_size == 0:
         with open(filename, 'w') as outfile:
             data = {'result': []}
             json.dump(data, outfile)
