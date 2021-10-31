@@ -4,6 +4,18 @@ import os
 
 import config
 from video_blur import recognize
+from names_detector import NamesDetector
+
+def make_mono_wav_of_file(prefix: str) -> str:
+    res_path = os.path.join(config.get_tmp_dir_path(), prefix + ".wav")
+    proc = subprocess.Popen(["ffmpeg",
+        "-i",
+        prefix + ".mp4",
+        "-ac 1",
+        res_path])
+    proc.wait()
+    return res_path
+
 
 def get_all_result_file_names(prefix: str) -> Tuple[str, str, str]:
     return (
@@ -18,8 +30,14 @@ def make_all_recognition(prefix: str) -> None:
     processed_folder = config.get_processed_dir_path()
     result_audio_fname, result_video_fname, result_processed_video_fname = get_all_result_file_names(prefix)
 
+    detector = NamesDetector()
     # make a blurred video
-    recognize(downloaded_video_path, os.path.join(config.get_tmp_dir_path(), prefix))
+    recognize(downloaded_video_path, os.path.join(config.get_tmp_dir_path(), prefix + ".mp4"))
+    sound_fpath = make_mono_wav_of_file(prefix)
+    timestamps_to_beep = detector.process_audio(sound_fpath)
+
+    final_video_dest = os.path.join(processed_folder, result_video_fname)
+    process_video_for_beeping(timestamps_to_beep, sound_fpath, final_video_dest)
 
     if not os.path.exists(processed_folder):
         os.makedirs(processed_folder)

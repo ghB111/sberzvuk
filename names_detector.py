@@ -62,4 +62,5 @@ class NamesDetector:
     def process_audio(self, filename):
         timestamps = self._recognize_audio(filename)
         names = self._extract_names(' '.join([x['word'] for x in timestamps]))
-        return list(filter(lambda x: x['word'] in names, timestamps))
+        raw_objs = list(filter(lambda x: x['word'] in names, timestamps))
+        return [(x['start'], x['end']) for x in raw_objs]
