@@ -29,8 +29,7 @@ def make_all_recognition(prefix: str) -> None:
         f.write(result_audio)
 
     # json stuff video
-    with open(os.path.join(processed_folder, result_video_fname), "w") as f:
-        parser_to_json(result_video_fname, fps, frame_array)
+    parser_to_json(result_video_fname, fps, frame_array)
 
     # final video
     with open(os.path.join(processed_folder, result_processed_video_fname), "w") as f:
