@@ -1,3 +1,4 @@
+import subprocess
 from typing import Tuple
 
 import os
@@ -6,7 +7,8 @@ import config
 from video_blur import recognize
 from names_detector import NamesDetector
 
-from videoprocessing import json_audio_print
+from videoprocessing import json_audio_print, process_video_for_beeping
+
 
 def make_mono_wav_of_file(prefix: str) -> str:
     res_path = os.path.join(config.get_tmp_dir_path(), prefix + ".wav")
@@ -34,7 +36,7 @@ def make_all_recognition(prefix: str) -> None:
 
     detector = NamesDetector()
     # make a blurred video
-    fps, frame_array = recognize(downloaded_video_path, os.path.join(config.get_tmp_dir_path(), prefix + ".mp4"))
+    # fps, frame_array = recognize(downloaded_video_path, os.path.join(config.get_tmp_dir_path(), prefix + ".mp4"))
     sound_fpath = make_mono_wav_of_file(prefix)
     timestamps_to_beep = detector.process_audio(sound_fpath)
 
@@ -45,9 +47,9 @@ def make_all_recognition(prefix: str) -> None:
         os.makedirs(processed_folder)
 
     result_audio_path = os.path.join(processed_folder, result_audio_fname)
-    json_audio_print(result_audio_path, timestamps)
+    json_audio_print(result_audio_path, timestamps_to_beep)
 
     result_video_path = os.path.join(processed_folder, result_audio_fname)
-    parser_to_json(result_video_path, fps, frame_array)
+    # parser_to_json(result_video_path, fps, frame_array)
 
 

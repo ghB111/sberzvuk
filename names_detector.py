@@ -9,7 +9,7 @@ class NamesDetector:
     def __init__(self):
         self.names = set()
         self.russian = set()
-        self.model = Model('vosk-model-ru-0.10')
+        self.model = Model('vosk-model-small-ru-0.22')
 
         with open('names.txt') as file:
             self.names = set([line.strip() for line in file])

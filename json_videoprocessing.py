@@ -30,7 +30,7 @@ def json_video_print(filename, frame_num, fps, corner1, corner2):
 
 
 # example of input
-parser_to_json(25, [[255, (344, 444), (123, 345)], [342, (324, 214), (134, 234)]])
+# parser_to_json(25, [[255, (344, 444), (123, 345)], [342, (324, 214), (134, 234)]])
 
 #fps, frameArray = recognize("source.mp4", "res.mp4")
 # frameNum = frameArray[0][0]
