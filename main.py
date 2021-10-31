@@ -61,4 +61,4 @@ def read_input(source: str, prefix: str):
 
     recognitions.make_all_recognition(prefix)
 
-    return {"source": len(r.content), "prefix": prefix}  # todo return message
+    return {}
