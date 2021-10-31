@@ -2,12 +2,12 @@ import json
 import os
 
 
-def parser_to_json(fps, frame_array):
+def parser_to_json(filename, fps, frame_array):
     for frame in frame_array:
         frame_num = frame[0]
         coord1 = frame[1]
         coord2 = frame[2]
-        json_video_print('data.json', frame_num, fps,  coord1, coord2)
+        json_video_print(filename, frame_num, fps,  coord1, coord2)
 
 
 def json_video_print(filename, frame_num, fps, corner1, corner2):
