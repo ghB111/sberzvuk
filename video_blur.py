@@ -77,23 +77,29 @@ def find_face(img, frame_num, model):
 
 
 def predict_from_videopath(video_path, model):
-  vidcap = cv2.VideoCapture(video_path)
+  try:
+    vidcap = cv2.VideoCapture(video_path)
+  except Exception as e:
+    print(e)
+    return None
 
   has_frames = True
   frame_num = 0
   skip_frames = 0
   size = None
+  has_frames, img = vidcap.read()
+
   while has_frames:
-    has_frames, img = vidcap.read()
     if skip_frames > 0:
       skip_frames -= 1
       continue
     else:
-      skip_frames = 150
+      skip_frames = 25
   
     find_face(img, frame_num, model)
     size = (img.shape[1], img.shape[0])
     frame_num += 1
+    has_frames, img = vidcap.read()
 
   return size
 
@@ -102,8 +108,6 @@ def recognize(video_path, output_videopath):
   make_a_dir('images/')
   model = VGGFace(model='resnet50')
   size = predict_from_videopath(video_path, model)
-  # size = (1920, 1080)
-  print(size)
   if size is not None:
     out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 3., size)
     for filename in sorted_alphanumeric(glob.glob('images/*.jpg')):
@@ -111,4 +115,4 @@ def recognize(video_path, output_videopath):
         out.write(img)
     out.release()
 
-# recognize('/Users/titrom/sberzvuk/hackathon_part_1.mp4', "video_hehe.avi")
+recognize('/Users/titrom/sberzvuk/hackathon_part_1.mp4', "video_hehe.avi")
