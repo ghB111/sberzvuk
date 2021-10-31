@@ -75,7 +75,7 @@ def CreateVideo(video_path, model, detector, output_videopath):
     if not has_frames:
       return None
     size = (img.shape[1], img.shape[0])
-    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MP4V'), 25., size)
+    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MP4V'), FPS, size)
     
     blur_founded = []
     blur_drawed = []
