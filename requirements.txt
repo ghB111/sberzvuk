@@ -29,3 +29,6 @@ opencv-python
 pillow
 keras_applications
 keras_vggface
+
+vosk
+pymystem3
