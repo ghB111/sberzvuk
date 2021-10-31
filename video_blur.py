@@ -86,8 +86,8 @@ def CreateVideo(video_path, model, detector, output_videopath):
       if has_frames:
         imArr.append(img)
 
-        if len(imArr) == GRID_SIZE:
-          print("Batch:", batch_index)
+        if len(imArr) == FPS:
+          # print("Batch:", batch_index)
           batch_index += 1
           imArr, blur_founded, blur_drawed_batch = process_banch(imArr, batch_index, model, detector, blur_founded)
           blur_drawed += blur_drawed_batch
