@@ -9,6 +9,12 @@ import config
 from pydub import AudioSegment
 
 Timestamps = List[Tuple[float, float]]
+def audio_parser_to_json(filename, array):
+    for x in array:
+        time_start = x[0]
+        time_end = x[1]
+        json_audio_print(filename, time_start, time_end)
+
 
 def json_audio_print(filename, time_start, time_end):
     # check on 0 size and if exists JSON file
@@ -29,7 +35,7 @@ def json_audio_print(filename, time_start, time_end):
 
 
 def process_video_for_beeping(timestamps: Timestamps, orig_audio_fpath: str, video_output_fpath: str) -> None:
-    
+
 
 
 
@@ -38,4 +44,3 @@ def process_video_for_beeping(timestamps: Timestamps, orig_audio_fpath: str, vid
 
 
     # b.export('new_audio.wav', format='wav')
-
