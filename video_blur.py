@@ -11,22 +11,6 @@ from keras_vggface.utils import preprocess_input
 from keras_vggface.utils import decode_predictions
 
 
-def get_files(dirpath):
-		return [s for s in os.listdir(dirpath) if os.path.isfile(os.path.join(dirpath, s))]
-
-
-def make_a_dir(folder):
-	if os.path.exists(folder):
-		os.system('rm -rf ' + folder)
-	os.mkdir(folder)
-
-
-def sorted_alphanumeric(data):
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
-    return sorted(data, key=alphanum_key)
-
-
 def preprocess_face(face):
   face_pp = face.astype('float32')
   face_pp = np.expand_dims(face_pp, axis = 0)
