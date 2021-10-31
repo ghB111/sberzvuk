@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import os
-
+from json_videoprocessing import parser_to_json
 import config
 from video_blur import recognize
 
@@ -19,18 +19,18 @@ def make_all_recognition(prefix: str) -> None:
     result_audio_fname, result_video_fname, result_processed_video_fname = get_all_result_file_names(prefix)
 
     # make a blurred video
-    recognize(downloaded_video_path, os.path.join(config.get_tmp_dir_path(), prefix))
+    fps, frame_array = recognize(downloaded_video_path, os.path.join(config.get_tmp_dir_path(), prefix))
 
     if not os.path.exists(processed_folder):
         os.makedirs(processed_folder)
 
-    # json stuff
+    # json stuff audio
     with open(os.path.join(processed_folder, result_audio_fname), "w") as f:
         f.write(result_audio)
 
-    # json stuff
+    # json stuff video
     with open(os.path.join(processed_folder, result_video_fname), "w") as f:
-        f.write(result_video) 
+        parser_to_json(result_video_fname, fps, frame_array)
 
     # final video
     with open(os.path.join(processed_folder, result_processed_video_fname), "w") as f:
