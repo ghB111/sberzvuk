@@ -47,13 +47,13 @@ def detect_blur(prediction):
   results = decode_predictions(prediction)
   need_blur = False
   for result in results[0]:
-    if result[1]*100 > 60:
+    if result[1]*100 > 70:
       need_blur = True
   return need_blur
 
 
-def find_face(img, frame_num, model):
-  detector = MTCNN()
+def find_face(img, model,detector):
+  #TODO relocate detector
   border_rel = 0
   detections = detector.detect_faces(img)
 
@@ -72,8 +72,87 @@ def find_face(img, frame_num, model):
     prediction = model.predict(face_pp)
     if detect_blur(prediction):
       img[y1:y2, x1:x2] = 0
+    return 
+  
 
-  cv2.imwrite("images/" + '/image_' + str(frame_num) + '.jpg', img)
+def deframe_Video(video_path):
+  try:
+    vidcap = cv2.VideoCapture(video_path)
+  except Exception as e:
+    print(e)
+    return None
+
+  has_frames = True
+  frame_num = 0
+  skip_frames = 0
+  size = None
+
+  while True:
+    '''
+    if skip_frames > 0:
+      has_frames, _ = vidcap.read()
+      skip_frames -= 1
+      continue
+    else:
+      skip_frames = 25
+    '''
+    has_frames, img = vidcap.read()
+    if has_frames:
+      cv2.imwrite("images/" + '/image_' + str(frame_num) + '.jpg', img)
+      size = (img.shape[1], img.shape[0])
+      frame_num += 1
+    else:
+      break
+      
+  return size
+
+def process_banch(banch , model, detector):
+
+  border_rel = 0
+  detections = detector.detect_faces(banch[0])
+
+  for detection in detections:
+    x1, y1, width, height = detection['box']
+    dw = round(width * border_rel)
+    dh = round(height * border_rel)
+    x2, y2 = x1 + width + dw, y1 + height + dh
+    face = banch[0][y1:y2, x1:x2]
+
+    face = PIL.Image.fromarray(face)
+    face = face.resize((224, 224))
+    face = np.asarray(face)
+
+    face_pp = preprocess_face(face)
+    prediction = model.predict(face_pp)
+    
+    if detect_blur(prediction):
+      for index, img in enumerate(banch):
+        img[y1:y2, x1:x2] = 0
+        banch[index] = img
+
+  return banch
+
+
+  
+
+
+def CreateVideo(size, model, detector, output_videopath, gridSize):
+
+  if size is not None:
+    out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 25., size)
+    
+    
+    for filename in sorted_alphanumeric(glob.glob('images/*.jpg')):
+        imArr = []
+        for i in range(gridSize):
+          imArr.append( cv2.imread(filename))
+        
+        imArr = process_banch(imArr, model, detector)
+        for im in imArr:
+          out.write(im)
+    out.release()
+
+
 
 
 def predict_from_videopath(video_path, model):
@@ -87,32 +166,45 @@ def predict_from_videopath(video_path, model):
   frame_num = 0
   skip_frames = 0
   size = None
-  has_frames, img = vidcap.read()
 
   while has_frames:
+    '''
     if skip_frames > 0:
+      has_frames, _ = vidcap.read()
       skip_frames -= 1
       continue
     else:
       skip_frames = 25
-  
+    '''
+    has_frames, img = vidcap.read()
     find_face(img, frame_num, model)
     size = (img.shape[1], img.shape[0])
     frame_num += 1
-    has_frames, img = vidcap.read()
-
+    
   return size
 
 
 def recognize(video_path, output_videopath):
   make_a_dir('images/')
   model = VGGFace(model='resnet50')
-  size = predict_from_videopath(video_path, model)
+  detector = MTCNN()
+  gridSize = 25
+  
+  # shitting in directory with frames from video
+  #size = (1920, 1080)
+  size = deframe_Video(video_path)
+  print(size)
+  #size = predict_from_videopath(video_path, model)
+  
+  #creating a video 
+
+  CreateVideo(size, model, detector, output_videopath, gridSize)
+'''
   if size is not None:
     out = cv2.VideoWriter(output_videopath,cv2.VideoWriter_fourcc(*'MJPG'), 3., size)
     for filename in sorted_alphanumeric(glob.glob('images/*.jpg')):
         img = cv2.imread(filename)
         out.write(img)
     out.release()
-
-recognize('/Users/titrom/sberzvuk/hackathon_part_1.mp4', "video_hehe.avi")
+'''
+recognize('./video.mp4', "video_hehe.avi")
